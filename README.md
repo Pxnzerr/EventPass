@@ -49,3 +49,7 @@ java -cp out eventpass.EventPass
 ## Requisitos
 
 - Java 17+
+
+## Autor
+
+Arthur Clark Francisco

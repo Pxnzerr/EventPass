@@ -2,6 +2,10 @@ package eventpass.service;
 
 import eventpass.model.*;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +30,38 @@ public class GerenciadorEventos {
                 .filter(e -> e.getId() == id)
                 .findFirst()
                 .orElse(null);
+    }
+
+    public List<Evento> buscarPorNome(String termo) {
+        if (termo == null || termo.isBlank()) {
+            return listarEventos();
+        }
+        String termoLower = termo.toLowerCase().trim();
+        return eventos.stream()
+                .filter(e -> e.getNome().toLowerCase().contains(termoLower))
+                .toList();
+    }
+
+    public List<Evento> buscarPorTipo(String tipo) {
+        if (tipo == null || tipo.isBlank()) {
+            return listarEventos();
+        }
+        String tipoLower = tipo.toLowerCase().trim();
+        return eventos.stream()
+                .filter(e -> e.getTipoEvento().toLowerCase().contains(tipoLower))
+                .toList();
+    }
+
+    public List<Evento> buscarPorFaixaPreco(double precoMin, double precoMax) {
+        return eventos.stream()
+                .filter(e -> e.getPrecoBase() >= precoMin && e.getPrecoBase() <= precoMax)
+                .toList();
+    }
+
+    public List<Evento> buscarApenasComVagas() {
+        return eventos.stream()
+                .filter(e -> e.getIngressosDisponiveis() > 0)
+                .toList();
     }
 
     public Ingresso venderIngresso(int eventoId, TipoIngresso tipo) {
@@ -168,6 +204,43 @@ public class GerenciadorEventos {
         }
 
         return sb.toString();
+    }
+
+    public Path exportarRelatorioTxt(int eventoId, String caminho) throws IOException {
+        Evento evento = buscarEventoPorId(eventoId);
+        if (evento == null) {
+            throw new IllegalArgumentException("Evento com ID " + eventoId + " não encontrado.");
+        }
+        String relatorio = gerarRelatorio(eventoId);
+        Path path = Path.of(caminho != null && !caminho.isBlank() ? caminho : "relatorio_evento_" + eventoId + ".txt");
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+        Files.writeString(path, relatorio, StandardCharsets.UTF_8);
+        return path;
+    }
+
+    public Path exportarIngressosCsv(int eventoId, String caminho) throws IOException {
+        Evento evento = buscarEventoPorId(eventoId);
+        if (evento == null) {
+            throw new IllegalArgumentException("Evento com ID " + eventoId + " não encontrado.");
+        }
+        Path path = Path.of(caminho != null && !caminho.isBlank() ? caminho : "ingressos_evento_" + eventoId + ".csv");
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("Codigo,Tipo,Preco,Status\n");
+        for (Ingresso ing : evento.getIngressosVendidos()) {
+            csv.append(String.format("%s,%s,%.2f,%s\n",
+                    ing.getCodigo(),
+                    ing.getTipo().name(),
+                    ing.getPreco(),
+                    ing.getStatus().name()));
+        }
+        Files.writeString(path, csv.toString(), StandardCharsets.UTF_8);
+        return path;
     }
 
     public boolean temEventos() {

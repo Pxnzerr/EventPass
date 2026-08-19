@@ -244,23 +244,87 @@ public class EventPass {
         int eventoId = lerInteiro("\n  ID do evento para relatório: ");
         String relatorio = gerenciador.gerarRelatorio(eventoId);
         System.out.println(relatorio);
+
+        System.out.println("  Deseja exportar este relatório para arquivo?");
+        System.out.println("  [1] Salvar Relatório Formatado (.txt)");
+        System.out.println("  [2] Exportar Lista de Ingressos (.csv)");
+        System.out.println("  [0] Não exportar");
+        int exportOpcao = lerInteiro("\n  Escolha uma opção: ");
+
+        if (exportOpcao == 1) {
+            System.out.print("  Nome do arquivo (Enter para padrão): ");
+            String path = scanner.nextLine().trim();
+            try {
+                java.nio.file.Path salvo = gerenciador.exportarRelatorioTxt(eventoId, path);
+                System.out.println("  ✅ Relatório exportado com sucesso para: " + salvo.toAbsolutePath());
+            } catch (Exception ex) {
+                System.out.println("  ❌ Erro ao exportar relatório: " + ex.getMessage());
+            }
+        } else if (exportOpcao == 2) {
+            System.out.print("  Nome do arquivo (Enter para padrão): ");
+            String path = scanner.nextLine().trim();
+            try {
+                java.nio.file.Path salvo = gerenciador.exportarIngressosCsv(eventoId, path);
+                System.out.println("  ✅ Ingressos exportados com sucesso para: " + salvo.toAbsolutePath());
+            } catch (Exception ex) {
+                System.out.println("  ❌ Erro ao exportar CSV: " + ex.getMessage());
+            }
+        }
     }
 
     private static void listarEventos() {
-        System.out.println("\n═══ EVENTOS CADASTRADOS ═══\n");
+        System.out.println("\n═══ LISTAR E FILTRAR EVENTOS ═══\n");
 
-        List<Evento> eventos = gerenciador.listarEventos();
-
-        if (eventos.isEmpty()) {
+        if (!gerenciador.temEventos()) {
             System.out.println("  Nenhum evento cadastrado.");
             return;
         }
 
-        for (Evento e : eventos) {
+        System.out.println("  [1] Listar todos os eventos");
+        System.out.println("  [2] Buscar por nome");
+        System.out.println("  [3] Filtrar por tipo (Show, Workshop, Conferência)");
+        System.out.println("  [4] Filtrar por faixa de preço base");
+        System.out.println("  [5] Apenas eventos com ingressos disponíveis");
+        System.out.println("  [0] Voltar ao menu principal");
+
+        int opcao = lerInteiro("\n  Escolha o filtro: ");
+        List<Evento> resultados = switch (opcao) {
+            case 1 -> gerenciador.listarEventos();
+            case 2 -> {
+                System.out.print("  Digite o termo de busca: ");
+                String termo = scanner.nextLine().trim();
+                yield gerenciador.buscarPorNome(termo);
+            }
+            case 3 -> {
+                System.out.print("  Digite o tipo (ex: Show, Workshop, Conferencia): ");
+                String tipo = scanner.nextLine().trim();
+                yield gerenciador.buscarPorTipo(tipo);
+            }
+            case 4 -> {
+                double min = lerDouble("  Preço mínimo (R$): ");
+                double max = lerDouble("  Preço máximo (R$): ");
+                yield gerenciador.buscarPorFaixaPreco(min, max);
+            }
+            case 5 -> gerenciador.buscarApenasComVagas();
+            default -> null;
+        };
+
+        if (opcao == 0) {
+            return;
+        }
+
+        if (resultados == null || resultados.isEmpty()) {
+            System.out.println("\n  ⚠️  Nenhum evento encontrado para o critério selecionado.");
+            return;
+        }
+
+        System.out.println("\n  📋 RESULTADOS ENCONTRADOS (" + resultados.size() + "):");
+        for (Evento e : resultados) {
             System.out.println("  " + e);
             System.out.println("    " + e.getDetalhesEspecificos());
-            System.out.printf("    Vendidos: %d | Disponíveis: %d | Receita: R$ %.2f\n\n",
-                    e.getTotalVendidos(), e.getIngressosDisponiveis(), e.getReceitaTotal());
+            System.out.printf("    Vendidos: %d | Disponíveis: %d | Usados: %d | Cancelados: %d | Receita: R$ %.2f\n\n",
+                    e.getTotalVendidos(), e.getIngressosDisponiveis(), e.getIngressosUsados(),
+                    e.getIngressosCancelados(), e.getReceitaTotal());
         }
     }
 

@@ -7,13 +7,13 @@ public class Ingresso {
     private final String codigo;
     private final TipoIngresso tipo;
     private final double preco;
-    private boolean usado;
+    private StatusIngresso status;
 
     public Ingresso(TipoIngresso tipo, double precoBase) {
         this.codigo = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         this.tipo = tipo;
         this.preco = precoBase * tipo.getMultiplicadorPreco();
-        this.usado = false;
+        this.status = StatusIngresso.VALIDO;
     }
 
     public String getCodigo() {
@@ -28,22 +28,41 @@ public class Ingresso {
         return preco;
     }
 
+    public StatusIngresso getStatus() {
+        return status;
+    }
+
     public boolean isUsado() {
-        return usado;
+        return status == StatusIngresso.UTILIZADO;
+    }
+
+    public boolean isValido() {
+        return status == StatusIngresso.VALIDO;
+    }
+
+    public boolean isCancelado() {
+        return status == StatusIngresso.CANCELADO;
     }
 
     public boolean validarEntrada() {
-        if (usado) {
+        if (status != StatusIngresso.VALIDO) {
             return false;
         }
-        this.usado = true;
+        this.status = StatusIngresso.UTILIZADO;
+        return true;
+    }
+
+    public boolean cancelar() {
+        if (status != StatusIngresso.VALIDO) {
+            return false;
+        }
+        this.status = StatusIngresso.CANCELADO;
         return true;
     }
 
     @Override
     public String toString() {
         return String.format("[%s] %s | R$ %.2f | %s",
-                codigo, tipo.getDescricao(), preco,
-                usado ? "✓ USADO" : "● VÁLIDO");
+                codigo, tipo.getDescricao(), preco, status.getBadge());
     }
 }

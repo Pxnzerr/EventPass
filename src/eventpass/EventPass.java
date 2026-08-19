@@ -34,6 +34,7 @@ public class EventPass {
                 case 3 -> validarEntrada();
                 case 4 -> exibirRelatorio();
                 case 5 -> listarEventos();
+                case 6 -> cancelarIngresso();
                 case 0 -> {
                     System.out.println("\n👋 Obrigado por usar o EventPass! Até logo.\n");
                     executando = false;
@@ -54,6 +55,7 @@ public class EventPass {
         System.out.println("│  [3] Validar Entrada                         │");
         System.out.println("│  [4] Relatório do Evento                     │");
         System.out.println("│  [5] Listar Eventos                          │");
+        System.out.println("│  [6] Cancelar Ingresso                       │");
         System.out.println("│  [0] Sair                                    │");
         System.out.println("└───────────────────────────────────────────────┘");
     }
@@ -198,6 +200,34 @@ public class EventPass {
         }
 
         String resultado = gerenciador.validarEntrada(codigo);
+        System.out.println("\n  " + resultado.replace("\n", "\n  "));
+    }
+
+    private static void cancelarIngresso() {
+        System.out.println("\n═══ CANCELAR / ESTORNAR INGRESSO ═══\n");
+
+        if (!gerenciador.temEventos()) {
+            System.out.println("  Nenhum evento cadastrado.");
+            return;
+        }
+
+        System.out.print("  Código do ingresso a cancelar: ");
+        String codigo = scanner.nextLine().trim();
+
+        if (codigo.isEmpty()) {
+            System.out.println("  ⚠️  Código não informado.");
+            return;
+        }
+
+        System.out.print("  Tem certeza que deseja cancelar e estornar este ingresso? (s/n): ");
+        String confirmacao = scanner.nextLine().trim();
+
+        if (!confirmacao.equalsIgnoreCase("s") && !confirmacao.equalsIgnoreCase("sim")) {
+            System.out.println("  ✖ Cancelamento abortado pelo usuário.");
+            return;
+        }
+
+        String resultado = gerenciador.cancelarIngresso(codigo);
         System.out.println("\n  " + resultado.replace("\n", "\n  "));
     }
 

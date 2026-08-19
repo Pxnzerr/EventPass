@@ -32,7 +32,7 @@ public abstract class Evento {
     public abstract String getDetalhesEspecificos();
 
     public Ingresso venderIngresso(TipoIngresso tipo) {
-        if (ingressosVendidos.size() >= capacidadeMaxima) {
+        if (getIngressosDisponiveis() <= 0) {
             return null;
         }
         Ingresso ingresso = new Ingresso(tipo, precoBase);
@@ -47,22 +47,41 @@ public abstract class Evento {
                 .orElse(null);
     }
 
+    public boolean cancelarIngresso(String codigo) {
+        Ingresso ingresso = buscarIngresso(codigo);
+        if (ingresso == null) {
+            return false;
+        }
+        return ingresso.cancelar();
+    }
+
     public int getIngressosDisponiveis() {
-        return capacidadeMaxima - ingressosVendidos.size();
+        return capacidadeMaxima - getTotalIngressosAtivos();
+    }
+
+    public int getTotalIngressosAtivos() {
+        return (int) ingressosVendidos.stream()
+                .filter(i -> i.getStatus() != StatusIngresso.CANCELADO)
+                .count();
     }
 
     public double getReceitaTotal() {
         return ingressosVendidos.stream()
+                .filter(i -> i.getStatus() != StatusIngresso.CANCELADO)
                 .mapToDouble(Ingresso::getPreco)
                 .sum();
     }
 
     public int getTotalVendidos() {
-        return ingressosVendidos.size();
+        return getTotalIngressosAtivos();
     }
 
     public long getIngressosUsados() {
         return ingressosVendidos.stream().filter(Ingresso::isUsado).count();
+    }
+
+    public long getIngressosCancelados() {
+        return ingressosVendidos.stream().filter(Ingresso::isCancelado).count();
     }
 
     public int getId() {
@@ -91,6 +110,10 @@ public abstract class Evento {
 
     public List<Ingresso> getIngressosVendidos() {
         return List.copyOf(ingressosVendidos);
+    }
+
+    public static void resetContadorId() {
+        contadorId = 1;
     }
 
     @Override

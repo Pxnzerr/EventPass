@@ -17,3 +17,9 @@ Thumbs.db
 # Build artifacts
 *.jar
 *.war
+
+# Exported reports and logs
+relatorio_*.txt
+ingressos_*.csv
+relatorios/
+

@@ -1,55 +1,113 @@
 # 🎫 EventPass
 
-Sistema de gestão de eventos com venda e validação de ingressos via terminal (CLI), desenvolvido em Java.
+Sistema robusto de gestão de eventos, bilheteria, validação de acesso e relatórios financeiros via terminal (CLI), desenvolvido em Java com foco em boas práticas de **Programação Orientada a Objetos (POO)**, **Tratamento Estruturado de Exceções**, **Java Streams** e **Testes Automatizados**.
 
-## Funcionalidades
+---
 
-- **Cadastrar Evento** — Show, Workshop ou Conferência
-- **Vender Ingresso** — Pista, VIP ou Meia Entrada
-- **Validar Entrada** — Busca pelo código do ingresso e marca como usado
-- **Relatório do Evento** — Quantidade de ingressos vendidos e receita total
-- **Listar Eventos** — Visualização de todos os eventos cadastrados
+## 🚀 Funcionalidades
 
-## Estrutura do Projeto
+- **Cadastrar Evento** — Suporte polimórfico a Shows, Workshops e Conferências com dados e regras específicas.
+- **Venda de Ingressos** — Categorias Pista (1.0x), VIP (2.5x) e Meia Entrada (0.5x) com verificação rigorosa de capacidade máxima.
+- **Validação de Entrada (Check-in)** — Localização instantânea por código alfanumérico com bloqueio de reuso e rejeição de ingressos cancelados.
+- **Cancelamento e Estorno** — Cancelamento seguro de ingressos não utilizados com restituição automática da vaga no evento e recálculo da receita líquida.
+- **Busca e Filtros Avançados** — Consulta por nome/palavra-chave, tipo de evento, faixa de preço e eventos com vagas disponíveis via Java Streams.
+- **Relatório Completo e Exportação de Arquivos** — Métricas financeiras e ocupação em tempo real, com exportação para arquivo `.txt` formatado e `.csv` estruturado.
+- **Suíte de Testes Automatizados** — Test runner nativo validando 100% das regras de negócio e casos de borda.
+
+---
+
+## 📁 Estrutura do Projeto
 
 ```
-src/eventpass/
-├── model/
-│   ├── TipoIngresso.java      # Enum: PISTA, VIP, MEIA_ENTRADA
-│   ├── Ingresso.java           # Código UUID, tipo, preço, status
-│   ├── Evento.java             # Classe abstrata base
-│   ├── Show.java               # Artista + Gênero Musical
-│   ├── Workshop.java           # Instrutor + Carga Horária
-│   └── Conferencia.java        # Palestrante + Tema
-├── service/
-│   └── GerenciadorEventos.java # Lógica de negócio
-└── EventPass.java              # Menu CLI principal
+EventPass/
+├── src/eventpass/
+│   ├── exception/                      # Exceções Customizadas de Domínio
+│   │   ├── EventPassException.java      # Classe base de runtime exceptions
+│   │   ├── EventoNaoEncontradoException.java
+│   │   ├── CapacidadeEsgotadaException.java
+│   │   ├── IngressoInvalidoException.java
+│   │   └── OperacaoInvalidaException.java
+│   ├── model/                          # Modelos de Domínio e Entidades
+│   │   ├── StatusIngresso.java         # Enum: VALIDO, UTILIZADO, CANCELADO
+│   │   ├── TipoIngresso.java           # Enum: PISTA, VIP, MEIA_ENTRADA (multiplicadores)
+│   │   ├── Ingresso.java               # Entidade do ingresso com código UUID e ciclo de vida
+│   │   ├── Evento.java                 # Classe abstrata base com gestão de ingressos e receita
+│   │   ├── Show.java                   # Especialização: Artista + Gênero Musical
+│   │   ├── Workshop.java               # Especialização: Instrutor + Carga Horária
+│   │   └── Conferencia.java            # Especialização: Palestrante + Tema
+│   ├── service/
+│   │   └── GerenciadorEventos.java     # Camada de serviços, filtros, relatórios e exportação
+│   └── EventPass.java                  # Ponto de entrada e interface CLI interativa
+├── test/
+│   └── eventpass/
+│       └── EventPassTest.java          # Suíte completa de testes automatizados
+├── run.bat                             # Script para compilar e executar o CLI (Windows)
+├── test.bat                            # Script para compilar e rodar a suíte de testes (Windows)
+├── LICENSE                             # Licença MIT
+└── README.md                           # Documentação técnica do projeto
 ```
 
-## Conceitos de POO Aplicados
+---
 
-| Conceito | Aplicação |
+## 🧠 Conceitos de POO & Engenharia Aplicados
+
+| Conceito | Aplicação no EventPass |
 |---|---|
-| Herança | `Show`, `Workshop`, `Conferencia` → `Evento` |
-| Polimorfismo | `getTipoEvento()`, `getDetalhesEspecificos()` |
-| Encapsulamento | Atributos privados, listas imutáveis |
-| Enum | `TipoIngresso` com multiplicador de preço |
-| Composição | `Evento` contém `List<Ingresso>` |
+| **Herança** | `Show`, `Workshop` e `Conferencia` estendem a classe abstrata base `Evento` |
+| **Polimorfismo** | Sobrescrita dinâmica de `getTipoEvento()` e `getDetalhesEspecificos()` |
+| **Encapsulamento** | Atributos privados, imutabilidade com `List.copyOf` e métodos de acesso controlados |
+| **Enums Ricos** | `TipoIngresso` com multiplicadores e `StatusIngresso` com badges visuais |
+| **Composição** | `Evento` encapsula coleções de `Ingresso` e gerencia seu ciclo de vida |
+| **Exceções de Domínio** | Hierarquia customizada (`EventPassException`, `CapacidadeEsgotadaException`, etc.) |
+| **Java Streams & Lambdas** | Filtros avançados, somatórios de receita e mapeamentos declarativos |
+| **File I/O Moderno (NIO.2)** | Exportação com `Files.writeString` e `StandardCharsets.UTF_8` |
 
-## Como Executar
+---
 
+## ⚙️ Como Executar
+
+### 1. Executando a Aplicação (CLI)
+
+**No Windows (via script):**
+```cmd
+run.bat
+```
+
+**Ou manualmente via terminal:**
 ```bash
 # Compilar
-javac -encoding UTF-8 -d out src/eventpass/model/*.java src/eventpass/service/*.java src/eventpass/EventPass.java
+javac -encoding UTF-8 -d out src/eventpass/exception/*.java src/eventpass/model/*.java src/eventpass/service/*.java src/eventpass/EventPass.java
 
 # Executar
 java -cp out eventpass.EventPass
 ```
 
-## Requisitos
+---
 
-- Java 17+
+### 2. Executando a Suíte de Testes Automatizados
 
-## Autor
+**No Windows (via script):**
+```cmd
+test.bat
+```
 
-Arthur Clark Francisco
+**Ou manualmente via terminal:**
+```bash
+# Compilar testes
+javac -encoding UTF-8 -d out src/eventpass/exception/*.java src/eventpass/model/*.java src/eventpass/service/*.java src/eventpass/EventPass.java test/eventpass/EventPassTest.java
+
+# Executar suíte de testes
+java -cp out eventpass.EventPassTest
+```
+
+---
+
+## 📋 Requisitos
+
+- **Java JDK 17** ou superior
+
+---
+
+## 👤 Autor
+
+Arthur Clark Francisco ([@Pxnzerr](https://github.com/Pxnzerr))

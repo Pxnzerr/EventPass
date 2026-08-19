@@ -1,5 +1,6 @@
 package eventpass.service;
 
+import eventpass.exception.*;
 import eventpass.model.*;
 
 import java.io.IOException;
@@ -30,6 +31,14 @@ public class GerenciadorEventos {
                 .filter(e -> e.getId() == id)
                 .findFirst()
                 .orElse(null);
+    }
+
+    public Evento buscarEventoPorIdOuFalhar(int id) {
+        Evento evento = buscarEventoPorId(id);
+        if (evento == null) {
+            throw new EventoNaoEncontradoException(id);
+        }
+        return evento;
     }
 
     public List<Evento> buscarPorNome(String termo) {
@@ -70,6 +79,52 @@ public class GerenciadorEventos {
             return null;
         }
         return evento.venderIngresso(tipo);
+    }
+
+    public Ingresso venderIngressoComValidacao(int eventoId, TipoIngresso tipo) {
+        Evento evento = buscarEventoPorIdOuFalhar(eventoId);
+        if (evento.getIngressosDisponiveis() <= 0) {
+            throw new CapacidadeEsgotadaException(evento.getNome(), evento.getCapacidadeMaxima());
+        }
+        return evento.venderIngresso(tipo);
+    }
+
+    public Ingresso validarEntradaComValidacao(String codigoIngresso) {
+        for (Evento evento : eventos) {
+            Ingresso ingresso = evento.buscarIngresso(codigoIngresso);
+            if (ingresso != null) {
+                if (ingresso.isCancelado()) {
+                    throw new OperacaoInvalidaException(
+                            String.format("Ingresso [%s] do evento \"%s\" está cancelado.", codigoIngresso, evento.getNome()));
+                }
+                if (ingresso.isUsado()) {
+                    throw new OperacaoInvalidaException(
+                            String.format("Ingresso [%s] do evento \"%s\" já foi utilizado anteriormente.", codigoIngresso, evento.getNome()));
+                }
+                ingresso.validarEntrada();
+                return ingresso;
+            }
+        }
+        throw new IngressoInvalidoException(codigoIngresso);
+    }
+
+    public Ingresso cancelarIngressoComValidacao(String codigoIngresso) {
+        for (Evento evento : eventos) {
+            Ingresso ingresso = evento.buscarIngresso(codigoIngresso);
+            if (ingresso != null) {
+                if (ingresso.isUsado()) {
+                    throw new OperacaoInvalidaException(
+                            String.format("Não é possível cancelar o ingresso [%s]: já foi utilizado para entrada.", codigoIngresso));
+                }
+                if (ingresso.isCancelado()) {
+                    throw new OperacaoInvalidaException(
+                            String.format("Ingresso [%s] já está cancelado.", codigoIngresso));
+                }
+                ingresso.cancelar();
+                return ingresso;
+            }
+        }
+        throw new IngressoInvalidoException(codigoIngresso);
     }
 
     public String validarEntrada(String codigoIngresso) {

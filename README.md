@@ -42,7 +42,9 @@ EventPass/
 │   └── eventpass/
 │       └── EventPassTest.java          # Suíte completa de testes automatizados
 ├── run.bat                             # Script para compilar e executar o CLI (Windows)
+├── run.sh                              # Script para compilar e executar o CLI (Linux/macOS)
 ├── test.bat                            # Script para compilar e rodar a suíte de testes (Windows)
+├── test.sh                             # Script para compilar e rodar a suíte de testes (Linux/macOS)
 ├── LICENSE                             # Licença MIT
 └── README.md                           # Documentação técnica do projeto
 ```
@@ -68,9 +70,14 @@ EventPass/
 
 ### 1. Executando a Aplicação (CLI)
 
-**No Windows (via script):**
+**No Windows:**
 ```cmd
 run.bat
+```
+
+**No Linux / macOS:**
+```bash
+chmod +x run.sh && ./run.sh
 ```
 
 **Ou manualmente via terminal:**
@@ -86,9 +93,14 @@ java -cp out eventpass.EventPass
 
 ### 2. Executando a Suíte de Testes Automatizados
 
-**No Windows (via script):**
+**No Windows:**
 ```cmd
 test.bat
+```
+
+**No Linux / macOS:**
+```bash
+chmod +x test.sh && ./test.sh
 ```
 
 **Ou manualmente via terminal:**

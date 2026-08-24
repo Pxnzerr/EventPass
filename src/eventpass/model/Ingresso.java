@@ -61,6 +61,19 @@ public class Ingresso {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Ingresso ingresso = (Ingresso) o;
+        return java.util.Objects.equals(codigo, ingresso.codigo);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(codigo);
+    }
+
+    @Override
     public String toString() {
         return String.format("[%s] %s | R$ %.2f | %s",
                 codigo, tipo.getDescricao(), preco, status.getBadge());

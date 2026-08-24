@@ -34,6 +34,7 @@ public class EventPassTest {
         executar("Exportação de Relatório TXT e Ingressos CSV", EventPassTest::testExportacaoRelatorioTxtECsv);
         executar("Lançamento de Exceções de Domínio", EventPassTest::testExcecoesCustomizadas);
         executar("Recálculo Financeiro e Estatísticas do Relatório", EventPassTest::testRecalculoReceitaRelatorio);
+        executar("Equals e HashCode nos Modelos Ingresso e Evento", EventPassTest::testEqualsEHashCodeModelos);
 
         long fim = System.currentTimeMillis();
 
@@ -63,6 +64,12 @@ public class EventPassTest {
 
     private static void assertTrue(boolean condicao, String mensagem) {
         if (!condicao) {
+            throw new AssertionError("Falha na asserção: " + mensagem);
+        }
+    }
+
+    private static void assertFalse(boolean condicao, String mensagem) {
+        if (condicao) {
             throw new AssertionError("Falha na asserção: " + mensagem);
         }
     }
@@ -315,5 +322,25 @@ public class EventPassTest {
         assertTrue(relatorio.contains("Entradas Validadas:    1"), "Validadas: 1");
         assertTrue(relatorio.contains("Ingressos Cancelados:  1"), "Cancelados: 1");
         assertTrue(relatorio.contains("RECEITA TOTAL:       R$ 150,00") || relatorio.contains("RECEITA TOTAL:       R$ 150.00"), "Receita líquida total: R$ 150,00");
+    }
+
+    private static void testEqualsEHashCodeModelos() {
+        Evento evento1 = new Show("Festival Rock", LocalDate.now().plusDays(10), "Arena", 50, 100.0, "Banda A", "Rock");
+        Evento evento2 = new Show("Festival Rock", LocalDate.now().plusDays(10), "Arena", 50, 100.0, "Banda A", "Rock");
+
+        // Eventos com IDs diferentes não devem ser iguais
+        assertFalse(evento1.equals(evento2), "Eventos com IDs distintos devem ser diferentes");
+        assertTrue(evento1.equals(evento1), "Evento deve ser igual a si mesmo");
+
+        Ingresso ing1 = evento1.venderIngresso(TipoIngresso.PISTA);
+        Ingresso ing2 = evento1.venderIngresso(TipoIngresso.VIP);
+
+        assertFalse(ing1.equals(ing2), "Ingressos com códigos distintos não devem ser iguais");
+        assertTrue(ing1.equals(ing1), "Ingresso deve ser igual a si mesmo");
+
+        java.util.Set<Ingresso> setIngressos = new java.util.HashSet<>();
+        setIngressos.add(ing1);
+        setIngressos.add(ing1);
+        assertEquals(1, setIngressos.size(), "HashSet não deve duplicar ingressos iguais");
     }
 }

@@ -298,6 +298,74 @@ public class GerenciadorEventos {
         return path;
     }
 
+    public double getReceitaTotalGeral() {
+        return eventos.stream()
+                .mapToDouble(Evento::getReceitaTotal)
+                .sum();
+    }
+
+    public int getTotalIngressosVendidosGeral() {
+        return eventos.stream()
+                .mapToInt(Evento::getTotalIngressosAtivos)
+                .sum();
+    }
+
+    public double getTaxaOcupacaoMediaGeral() {
+        int capTotal = eventos.stream()
+                .mapToInt(Evento::getCapacidadeMaxima)
+                .sum();
+        if (capTotal == 0) {
+            return 0.0;
+        }
+        return (getTotalIngressosVendidosGeral() / (double) capTotal) * 100.0;
+    }
+
+    public String gerarDashboardGeral() {
+        StringBuilder sb = new StringBuilder();
+        String separador = "═".repeat(60);
+
+        sb.append("\n").append(separador).append("\n");
+        sb.append("         📊 DASHBOARD CONSOLIDADO - EVENTPASS\n");
+        sb.append(separador).append("\n\n");
+
+        sb.append(String.format("  Total de Eventos Cadastrados: %d\n", eventos.size()));
+        sb.append(String.format("  Ingressos Vendidos (Ativos):  %d\n", getTotalIngressosVendidosGeral()));
+        sb.append(String.format(java.util.Locale.US, "  Taxa Média de Ocupação:       %.1f%%\n", getTaxaOcupacaoMediaGeral()));
+        sb.append(String.format(java.util.Locale.US, "  💰 RECEITA BRUTA CONSOLIDADA: R$ %.2f\n", getReceitaTotalGeral()));
+
+        sb.append("\n").append("─".repeat(60)).append("\n");
+        sb.append("  RESUMO POR EVENTO:\n");
+        sb.append("─".repeat(60)).append("\n");
+
+        if (eventos.isEmpty()) {
+            sb.append("  (Nenhum evento cadastrado)\n");
+        } else {
+            for (Evento e : eventos) {
+                sb.append(String.format(java.util.Locale.US,
+                        "  [#%d] %-22s | Ocupação: %3.1f%% (%d/%d) | Receita: R$ %.2f%s\n",
+                        e.getId(),
+                        e.getNome().length() > 22 ? e.getNome().substring(0, 19) + "..." : e.getNome(),
+                        e.getTaxaOcupacao(),
+                        e.getTotalIngressosAtivos(),
+                        e.getCapacidadeMaxima(),
+                        e.getReceitaTotal(),
+                        e.isEsgotado() ? " [ESGOTADO]" : ""));
+            }
+        }
+        sb.append(separador).append("\n");
+        return sb.toString();
+    }
+
+    public Path exportarDashboardGeralTxt(String caminho) throws IOException {
+        String dashboard = gerarDashboardGeral();
+        Path path = Path.of(caminho != null && !caminho.isBlank() ? caminho : "dashboard_geral_eventpass.txt");
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+        Files.writeString(path, dashboard, StandardCharsets.UTF_8);
+        return path;
+    }
+
     public boolean temEventos() {
         return !eventos.isEmpty();
     }

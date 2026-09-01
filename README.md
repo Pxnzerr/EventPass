@@ -12,7 +12,8 @@ Sistema robusto de gestão de eventos, bilheteria, validação de acesso e relat
 - **Cancelamento e Estorno** — Cancelamento seguro de ingressos não utilizados com restituição automática da vaga no evento e recálculo da receita líquida.
 - **Busca e Filtros Avançados** — Consulta por nome/palavra-chave, tipo de evento, faixa de preço e eventos com vagas disponíveis via Java Streams.
 - **Relatório Completo e Exportação de Arquivos** — Métricas financeiras e ocupação em tempo real, com exportação para arquivo `.txt` formatado e `.csv` estruturado.
-- **Suíte de Testes Automatizados** — Test runner nativo validando 100% das regras de negócio e casos de borda.
+- **Dashboard Consolidado e Taxa de Ocupação** — Visão analítica global da plataforma com receita consolidada, ocupação percentual e exportação em `.txt`.
+- **Suíte de Testes Automatizados** — Test runner nativo validando 100% das regras de negócio, modelos, taxas e casos de borda (13 testes).
 
 ---
 
@@ -31,16 +32,16 @@ EventPass/
 │   │   ├── StatusIngresso.java         # Enum: VALIDO, UTILIZADO, CANCELADO
 │   │   ├── TipoIngresso.java           # Enum: PISTA, VIP, MEIA_ENTRADA (multiplicadores)
 │   │   ├── Ingresso.java               # Entidade do ingresso com código UUID e ciclo de vida
-│   │   ├── Evento.java                 # Classe abstrata base com gestão de ingressos e receita
+│   │   ├── Evento.java                 # Classe abstrata base com taxa de ocupação e gestão de ingressos
 │   │   ├── Show.java                   # Especialização: Artista + Gênero Musical
 │   │   ├── Workshop.java               # Especialização: Instrutor + Carga Horária
 │   │   └── Conferencia.java            # Especialização: Palestrante + Tema
 │   ├── service/
-│   │   └── GerenciadorEventos.java     # Camada de serviços, filtros, relatórios e exportação
+│   │   └── GerenciadorEventos.java     # Serviços, filtros, dashboard consolidado e exportação
 │   └── EventPass.java                  # Ponto de entrada e interface CLI interativa
 ├── test/
 │   └── eventpass/
-│       └── EventPassTest.java          # Suíte completa de testes automatizados
+│       └── EventPassTest.java          # Suíte completa de testes automatizados (13 testes)
 ├── run.bat                             # Script para compilar e executar o CLI (Windows)
 ├── run.sh                              # Script para compilar e executar o CLI (Linux/macOS)
 ├── test.bat                            # Script para compilar e rodar a suíte de testes (Windows)

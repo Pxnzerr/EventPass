@@ -84,6 +84,17 @@ public abstract class Evento {
         return ingressosVendidos.stream().filter(Ingresso::isCancelado).count();
     }
 
+    public double getTaxaOcupacao() {
+        if (capacidadeMaxima <= 0) {
+            return 0.0;
+        }
+        return (getTotalIngressosAtivos() / (double) capacidadeMaxima) * 100.0;
+    }
+
+    public boolean isEsgotado() {
+        return getIngressosDisponiveis() <= 0;
+    }
+
     public int getId() {
         return id;
     }

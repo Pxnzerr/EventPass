@@ -35,6 +35,7 @@ public class EventPassTest {
         executar("Lançamento de Exceções de Domínio", EventPassTest::testExcecoesCustomizadas);
         executar("Recálculo Financeiro e Estatísticas do Relatório", EventPassTest::testRecalculoReceitaRelatorio);
         executar("Equals e HashCode nos Modelos Ingresso e Evento", EventPassTest::testEqualsEHashCodeModelos);
+        executar("Dashboard Geral, Receita Consolidada e Taxa de Ocupação", EventPassTest::testDashboardGeralETaxaOcupacao);
 
         long fim = System.currentTimeMillis();
 
@@ -342,5 +343,56 @@ public class EventPassTest {
         setIngressos.add(ing1);
         setIngressos.add(ing1);
         assertEquals(1, setIngressos.size(), "HashSet não deve duplicar ingressos iguais");
+    }
+
+    private static void testDashboardGeralETaxaOcupacao() {
+        Evento.resetContadorId();
+        GerenciadorEventos g = new GerenciadorEventos();
+
+        Show show = new Show("Show Pop", LocalDate.now().plusDays(5), "Arena", 10, 100.0, "Cantor X", "Pop");
+        Workshop workshop = new Workshop("Curso Kotlin", LocalDate.now().plusDays(10), "Lab", 10, 200.0, "Prof Y", 4);
+
+        g.cadastrarEvento(show);
+        g.cadastrarEvento(workshop);
+
+        // Vender 5 ingressos no show (50% de ocupação)
+        show.venderIngresso(TipoIngresso.PISTA); // R$ 100
+        show.venderIngresso(TipoIngresso.PISTA); // R$ 100
+        show.venderIngresso(TipoIngresso.VIP);   // R$ 250
+        show.venderIngresso(TipoIngresso.VIP);   // R$ 250
+        show.venderIngresso(TipoIngresso.MEIA_ENTRADA); // R$ 50 -> Total Show: R$ 750
+
+        // Vender 10 ingressos no workshop (100% de ocupação, esgotado)
+        for (int i = 0; i < 10; i++) {
+            workshop.venderIngresso(TipoIngresso.PISTA); // 10 * 200 = R$ 2000
+        }
+
+        assertEqualsDouble(50.0, show.getTaxaOcupacao(), 0.001, "Taxa de ocupação do show deve ser 50%");
+        assertFalse(show.isEsgotado(), "Show com 5/10 vagas não deve estar esgotado");
+
+        assertEqualsDouble(100.0, workshop.getTaxaOcupacao(), 0.001, "Taxa de ocupação do workshop deve ser 100%");
+        assertTrue(workshop.isEsgotado(), "Workshop com 10/10 vagas deve estar esgotado");
+
+        assertEquals(15, g.getTotalIngressosVendidosGeral(), "Total de ingressos ativos vendidos na plataforma deve ser 15");
+        assertEqualsDouble(2750.0, g.getReceitaTotalGeral(), 0.001, "Receita bruta consolidada deve ser R$ 2750.00");
+        assertEqualsDouble(75.0, g.getTaxaOcupacaoMediaGeral(), 0.001, "Taxa média geral de ocupação deve ser 75% (15/20)");
+
+        String dashboard = g.gerarDashboardGeral();
+        assertTrue(dashboard.contains("DASHBOARD CONSOLIDADO"), "Dashboard deve conter cabeçalho");
+        assertTrue(dashboard.contains("Total de Eventos Cadastrados: 2"), "Dashboard deve listar 2 eventos");
+        assertTrue(dashboard.contains("Show Pop"), "Dashboard deve listar Show Pop");
+        assertTrue(dashboard.contains("Curso Kotlin"), "Dashboard deve listar Curso Kotlin");
+        assertTrue(dashboard.contains("[ESGOTADO]"), "Dashboard deve marcar evento esgotado");
+
+        // Exportação do dashboard geral para TXT
+        try {
+            Path pathTemp = Files.createTempFile("teste_dashboard_", ".txt");
+            Path gerado = g.exportarDashboardGeralTxt(pathTemp.toString());
+            assertTrue(Files.exists(gerado), "Arquivo de dashboard deve existir");
+            assertTrue(Files.size(gerado) > 0, "Arquivo de dashboard não deve estar vazio");
+            Files.deleteIfExists(gerado);
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao testar exportação do dashboard geral: " + e.getMessage(), e);
+        }
     }
 }

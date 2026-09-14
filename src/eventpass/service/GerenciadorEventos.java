@@ -141,16 +141,16 @@ public class GerenciadorEventos {
                 if (ingresso.validarEntrada()) {
                     return String.format(
                             "✅ ENTRADA VALIDADA!\n" +
-                            "   Evento: %s\n" +
-                            "   Ingresso: %s (%s)\n" +
-                            "   Preço pago: R$ %.2f",
+                                    "   Evento: %s\n" +
+                                    "   Ingresso: %s (%s)\n" +
+                                    "   Preço pago: R$ %.2f",
                             evento.getNome(), ingresso.getCodigo(),
                             ingresso.getTipo().getDescricao(), ingresso.getPreco());
                 } else {
                     return String.format(
                             "⚠️  INGRESSO JÁ UTILIZADO!\n" +
-                            "   Código: %s\n" +
-                            "   Evento: %s",
+                                    "   Código: %s\n" +
+                                    "   Evento: %s",
                             ingresso.getCodigo(), evento.getNome());
                 }
             }
@@ -226,22 +226,28 @@ public class GerenciadorEventos {
         sb.append("  💰 RECEITA (LÍQUIDA)\n");
         sb.append("─".repeat(55)).append("\n\n");
 
-        long pista = evento.getIngressosVendidos().stream()
-                .filter(i -> i.getTipo() == TipoIngresso.PISTA && i.getStatus() != StatusIngresso.CANCELADO).count();
-        long vip = evento.getIngressosVendidos().stream()
-                .filter(i -> i.getTipo() == TipoIngresso.VIP && i.getStatus() != StatusIngresso.CANCELADO).count();
-        long meia = evento.getIngressosVendidos().stream()
-                .filter(i -> i.getTipo() == TipoIngresso.MEIA_ENTRADA && i.getStatus() != StatusIngresso.CANCELADO).count();
+        long pista = 0, vip = 0, meia = 0;
+        double receitaPista = 0.0, receitaVip = 0.0, receitaMeia = 0.0;
 
-        double receitaPista = evento.getIngressosVendidos().stream()
-                .filter(i -> i.getTipo() == TipoIngresso.PISTA && i.getStatus() != StatusIngresso.CANCELADO)
-                .mapToDouble(Ingresso::getPreco).sum();
-        double receitaVip = evento.getIngressosVendidos().stream()
-                .filter(i -> i.getTipo() == TipoIngresso.VIP && i.getStatus() != StatusIngresso.CANCELADO)
-                .mapToDouble(Ingresso::getPreco).sum();
-        double receitaMeia = evento.getIngressosVendidos().stream()
-                .filter(i -> i.getTipo() == TipoIngresso.MEIA_ENTRADA && i.getStatus() != StatusIngresso.CANCELADO)
-                .mapToDouble(Ingresso::getPreco).sum();
+        for (Ingresso i : evento.getIngressosVendidos()) {
+            if (i.getStatus() == StatusIngresso.CANCELADO) {
+                continue;
+            }
+            switch (i.getTipo()) {
+                case PISTA -> {
+                    pista++;
+                    receitaPista += i.getPreco();
+                }
+                case VIP -> {
+                    vip++;
+                    receitaVip += i.getPreco();
+                }
+                case MEIA_ENTRADA -> {
+                    meia++;
+                    receitaMeia += i.getPreco();
+                }
+            }
+        }
 
         sb.append(String.format("  Pista (%dx):           R$ %.2f\n", pista, receitaPista));
         sb.append(String.format("  VIP (%dx):             R$ %.2f\n", vip, receitaVip));

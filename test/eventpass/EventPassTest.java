@@ -36,6 +36,7 @@ public class EventPassTest {
         executar("Recálculo Financeiro e Estatísticas do Relatório", EventPassTest::testRecalculoReceitaRelatorio);
         executar("Equals e HashCode nos Modelos Ingresso e Evento", EventPassTest::testEqualsEHashCodeModelos);
         executar("Dashboard Geral, Receita Consolidada e Taxa de Ocupação", EventPassTest::testDashboardGeralETaxaOcupacao);
+        executar("Desempenho em Escala: Busca O(1) e Venda O(1)", EventPassTest::testDesempenhoVendaEBuscaEmEscala);
 
         long fim = System.currentTimeMillis();
 
@@ -394,5 +395,43 @@ public class EventPassTest {
         } catch (Exception e) {
             throw new RuntimeException("Falha ao testar exportação do dashboard geral: " + e.getMessage(), e);
         }
+    }
+
+
+    private static void testDesempenhoVendaEBuscaEmEscala() {
+        Evento.resetContadorId();
+        GerenciadorEventos g = new GerenciadorEventos();
+        Evento show = new Show("Mega Show", LocalDate.now().plusDays(30), "Estádio", 5000, 100.0, "Banda Rock", "Rock");
+        g.cadastrarEvento(show);
+
+        long t0 = System.currentTimeMillis();
+        Ingresso primeiro = null;
+        Ingresso meio = null;
+        Ingresso ultimo = null;
+        for (int i = 0; i < 5000; i++) {
+            Ingresso ing = g.venderIngresso(show.getId(), TipoIngresso.PISTA);
+            if (i == 0) primeiro = ing;
+            if (i == 2500) meio = ing;
+            if (i == 4999) ultimo = ing;
+        }
+        long tVenda = System.currentTimeMillis() - t0;
+
+        assertTrue(show.isEsgotado(), "Evento com 5000/5000 deve estar esgotado");
+        assertEquals(5000, show.getTotalVendidos(), "Total vendidos deve ser 5000");
+
+        // Busca O(1)
+        long tBusca0 = System.currentTimeMillis();
+        assertEquals(primeiro, show.buscarIngresso(primeiro.getCodigo()), "Busca do primeiro deve ser exata");
+        assertEquals(meio, show.buscarIngresso(meio.getCodigo()), "Busca do meio deve ser exata");
+        assertEquals(ultimo, show.buscarIngresso(ultimo.getCodigo()), "Busca do último deve ser exata");
+        long tBusca = System.currentTimeMillis() - tBusca0;
+
+        // Cancelamento O(1)
+        assertTrue(g.cancelarIngresso(meio.getCodigo()).contains("CANCELADO E ESTORNADO"), "Cancelamento em escala deve suceder");
+        assertEquals(1, show.getIngressosDisponiveis(), "Cancelamento em lote deve liberar vaga instantaneamente");
+        assertFalse(show.isEsgotado(), "Não deve estar esgotado após cancelamento");
+
+        assertTrue(tVenda < 1500, "Venda em escala de 5000 ingressos deve ser rápida (executou em " + tVenda + "ms)");
+        assertTrue(tBusca < 100, "Busca O(1) de ingressos deve ser quase instantânea (executou em " + tBusca + "ms)");
     }
 }

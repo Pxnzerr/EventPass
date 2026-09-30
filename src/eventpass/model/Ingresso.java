@@ -8,12 +8,22 @@ public class Ingresso {
     private final TipoIngresso tipo;
     private final double preco;
     private StatusIngresso status;
+    private Runnable onValidateCallback;
+    private Runnable onCancelCallback;
 
     public Ingresso(TipoIngresso tipo, double precoBase) {
         this.codigo = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         this.tipo = tipo;
         this.preco = precoBase * tipo.getMultiplicadorPreco();
         this.status = StatusIngresso.VALIDO;
+    }
+
+    public void setOnValidateCallback(Runnable onValidateCallback) {
+        this.onValidateCallback = onValidateCallback;
+    }
+
+    public void setOnCancelCallback(Runnable onCancelCallback) {
+        this.onCancelCallback = onCancelCallback;
     }
 
     public String getCodigo() {
@@ -49,6 +59,9 @@ public class Ingresso {
             return false;
         }
         this.status = StatusIngresso.UTILIZADO;
+        if (onValidateCallback != null) {
+            onValidateCallback.run();
+        }
         return true;
     }
 
@@ -57,6 +70,9 @@ public class Ingresso {
             return false;
         }
         this.status = StatusIngresso.CANCELADO;
+        if (onCancelCallback != null) {
+            onCancelCallback.run();
+        }
         return true;
     }
 

@@ -13,7 +13,7 @@ Sistema robusto de gestão de eventos, bilheteria, validação de acesso e relat
 - **Busca e Filtros Avançados** — Consulta por nome/palavra-chave, tipo de evento, faixa de preço e eventos com vagas disponíveis via Java Streams.
 - **Relatório Completo e Exportação de Arquivos** — Métricas financeiras e ocupação em tempo real, com exportação para arquivo `.txt` formatado e `.csv` estruturado.
 - **Dashboard Consolidado e Taxa de Ocupação** — Visão analítica global da plataforma com receita consolidada, ocupação percentual e exportação em `.txt`.
-- **Suíte de Testes Automatizados** — Test runner nativo validando 100% das regras de negócio, modelos, taxas e casos de borda (13 testes).
+- **Suíte de Testes Automatizados** — Test runner nativo validando 100% das regras de negócio, modelos, taxas e casos de borda (14 testes).
 
 ---
 
@@ -41,7 +41,7 @@ EventPass/
 │   └── EventPass.java                  # Ponto de entrada e interface CLI interativa
 ├── test/
 │   └── eventpass/
-│       └── EventPassTest.java          # Suíte completa de testes automatizados (13 testes)
+│       └── EventPassTest.java          # Suíte completa de testes automatizados (14 testes)
 ├── run.bat                             # Script para compilar e executar o CLI (Windows)
 ├── run.sh                              # Script para compilar e executar o CLI (Linux/macOS)
 ├── test.bat                            # Script para compilar e rodar a suíte de testes (Windows)
@@ -58,7 +58,7 @@ EventPass/
 |---|---|
 | **Herança** | `Show`, `Workshop` e `Conferencia` estendem a classe abstrata base `Evento` |
 | **Polimorfismo** | Sobrescrita dinâmica de `getTipoEvento()` e `getDetalhesEspecificos()` |
-| **Encapsulamento** | Atributos privados, imutabilidade com `List.copyOf` e métodos de acesso controlados |
+| **Encapsulamento** | Atributos privados, coleções protegidas com indexação `O(1)` e métodos de acesso controlados |
 | **Enums Ricos** | `TipoIngresso` com multiplicadores e `StatusIngresso` com badges visuais |
 | **Composição** | `Evento` encapsula coleções de `Ingresso` e gerencia seu ciclo de vida |
 | **Exceções de Domínio** | Hierarquia customizada (`EventPassException`, `CapacidadeEsgotadaException`, etc.) |

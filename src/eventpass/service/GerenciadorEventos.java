@@ -8,29 +8,37 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GerenciadorEventos {
 
     private final List<Evento> eventos;
+    private final Map<Integer, Evento> eventosPorId;
+    private final Map<String, Evento> eventoPorIngresso;
 
     public GerenciadorEventos() {
         this.eventos = new ArrayList<>();
+        this.eventosPorId = new HashMap<>();
+        this.eventoPorIngresso = new HashMap<>();
     }
 
     public void cadastrarEvento(Evento evento) {
         eventos.add(evento);
+        eventosPorId.put(evento.getId(), evento);
+        for (Ingresso ing : evento.getIngressosVendidos()) {
+            eventoPorIngresso.put(ing.getCodigo().toUpperCase(), evento);
+        }
     }
 
     public List<Evento> listarEventos() {
-        return List.copyOf(eventos);
+        return Collections.unmodifiableList(eventos);
     }
 
     public Evento buscarEventoPorId(int id) {
-        return eventos.stream()
-                .filter(e -> e.getId() == id)
-                .findFirst()
-                .orElse(null);
+        return eventosPorId.get(id);
     }
 
     public Evento buscarEventoPorIdOuFalhar(int id) {
@@ -78,7 +86,11 @@ public class GerenciadorEventos {
         if (evento == null) {
             return null;
         }
-        return evento.venderIngresso(tipo);
+        Ingresso ingresso = evento.venderIngresso(tipo);
+        if (ingresso != null) {
+            eventoPorIngresso.put(ingresso.getCodigo().toUpperCase(), evento);
+        }
+        return ingresso;
     }
 
     public Ingresso venderIngressoComValidacao(int eventoId, TipoIngresso tipo) {
@@ -86,11 +98,34 @@ public class GerenciadorEventos {
         if (evento.getIngressosDisponiveis() <= 0) {
             throw new CapacidadeEsgotadaException(evento.getNome(), evento.getCapacidadeMaxima());
         }
-        return evento.venderIngresso(tipo);
+        Ingresso ingresso = evento.venderIngresso(tipo);
+        if (ingresso != null) {
+            eventoPorIngresso.put(ingresso.getCodigo().toUpperCase(), evento);
+        }
+        return ingresso;
+    }
+
+    private Evento localizarEventoDoIngresso(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        String key = codigo.toUpperCase();
+        Evento evento = eventoPorIngresso.get(key);
+        if (evento != null) {
+            return evento;
+        }
+        for (Evento e : eventos) {
+            if (e.buscarIngresso(codigo) != null) {
+                eventoPorIngresso.put(key, e);
+                return e;
+            }
+        }
+        return null;
     }
 
     public Ingresso validarEntradaComValidacao(String codigoIngresso) {
-        for (Evento evento : eventos) {
+        Evento evento = localizarEventoDoIngresso(codigoIngresso);
+        if (evento != null) {
             Ingresso ingresso = evento.buscarIngresso(codigoIngresso);
             if (ingresso != null) {
                 if (ingresso.isCancelado()) {
@@ -109,7 +144,8 @@ public class GerenciadorEventos {
     }
 
     public Ingresso cancelarIngressoComValidacao(String codigoIngresso) {
-        for (Evento evento : eventos) {
+        Evento evento = localizarEventoDoIngresso(codigoIngresso);
+        if (evento != null) {
             Ingresso ingresso = evento.buscarIngresso(codigoIngresso);
             if (ingresso != null) {
                 if (ingresso.isUsado()) {
@@ -120,7 +156,7 @@ public class GerenciadorEventos {
                     throw new OperacaoInvalidaException(
                             String.format("Ingresso [%s] já está cancelado.", codigoIngresso));
                 }
-                ingresso.cancelar();
+                evento.cancelarIngresso(codigoIngresso);
                 return ingresso;
             }
         }
@@ -128,7 +164,8 @@ public class GerenciadorEventos {
     }
 
     public String validarEntrada(String codigoIngresso) {
-        for (Evento evento : eventos) {
+        Evento evento = localizarEventoDoIngresso(codigoIngresso);
+        if (evento != null) {
             Ingresso ingresso = evento.buscarIngresso(codigoIngresso);
             if (ingresso != null) {
                 if (ingresso.isCancelado()) {
@@ -159,7 +196,8 @@ public class GerenciadorEventos {
     }
 
     public String cancelarIngresso(String codigoIngresso) {
-        for (Evento evento : eventos) {
+        Evento evento = localizarEventoDoIngresso(codigoIngresso);
+        if (evento != null) {
             Ingresso ingresso = evento.buscarIngresso(codigoIngresso);
             if (ingresso != null) {
                 if (ingresso.isUsado()) {
@@ -176,7 +214,7 @@ public class GerenciadorEventos {
                             "   Evento: %s",
                             ingresso.getCodigo(), evento.getNome());
                 }
-                if (ingresso.cancelar()) {
+                if (evento.cancelarIngresso(codigoIngresso)) {
                     return String.format(
                             "✅ INGRESSO CANCELADO E ESTORNADO COM SUCESSO!\n" +
                             "   Código: %s (%s)\n" +
@@ -229,7 +267,8 @@ public class GerenciadorEventos {
         long pista = 0, vip = 0, meia = 0;
         double receitaPista = 0.0, receitaVip = 0.0, receitaMeia = 0.0;
 
-        for (Ingresso i : evento.getIngressosVendidos()) {
+        List<Ingresso> vendidos = evento.getIngressosVendidos();
+        for (Ingresso i : vendidos) {
             if (i.getStatus() == StatusIngresso.CANCELADO) {
                 continue;
             }
@@ -257,9 +296,9 @@ public class GerenciadorEventos {
 
         sb.append("\n").append(separador).append("\n");
 
-        if (!evento.getIngressosVendidos().isEmpty()) {
+        if (!vendidos.isEmpty()) {
             sb.append("\n  📋 INGRESSOS VENDIDOS:\n\n");
-            for (Ingresso ing : evento.getIngressosVendidos()) {
+            for (Ingresso ing : vendidos) {
                 sb.append("    ").append(ing).append("\n");
             }
         }
@@ -291,35 +330,40 @@ public class GerenciadorEventos {
             Files.createDirectories(path.getParent());
         }
 
-        StringBuilder csv = new StringBuilder();
+        List<Ingresso> vendidos = evento.getIngressosVendidos();
+        StringBuilder csv = new StringBuilder(vendidos.size() * 40 + 32);
         csv.append("Codigo,Tipo,Preco,Status\n");
-        for (Ingresso ing : evento.getIngressosVendidos()) {
-            csv.append(String.format("%s,%s,%.2f,%s\n",
-                    ing.getCodigo(),
-                    ing.getTipo().name(),
-                    ing.getPreco(),
-                    ing.getStatus().name()));
+        for (Ingresso ing : vendidos) {
+            csv.append(ing.getCodigo()).append(',')
+               .append(ing.getTipo().name()).append(',')
+               .append(String.format(java.util.Locale.US, "%.2f", ing.getPreco())).append(',')
+               .append(ing.getStatus().name()).append('\n');
         }
         Files.writeString(path, csv.toString(), StandardCharsets.UTF_8);
         return path;
     }
 
     public double getReceitaTotalGeral() {
-        return eventos.stream()
-                .mapToDouble(Evento::getReceitaTotal)
-                .sum();
+        double total = 0.0;
+        for (Evento e : eventos) {
+            total += e.getReceitaTotal();
+        }
+        return Math.round(total * 100.0) / 100.0;
     }
 
     public int getTotalIngressosVendidosGeral() {
-        return eventos.stream()
-                .mapToInt(Evento::getTotalIngressosAtivos)
-                .sum();
+        int total = 0;
+        for (Evento e : eventos) {
+            total += e.getTotalIngressosAtivos();
+        }
+        return total;
     }
 
     public double getTaxaOcupacaoMediaGeral() {
-        int capTotal = eventos.stream()
-                .mapToInt(Evento::getCapacidadeMaxima)
-                .sum();
+        int capTotal = 0;
+        for (Evento e : eventos) {
+            capTotal += e.getCapacidadeMaxima();
+        }
         if (capTotal == 0) {
             return 0.0;
         }

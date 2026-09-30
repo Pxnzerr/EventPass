@@ -3,7 +3,10 @@ package eventpass.model;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class Evento {
 
@@ -16,6 +19,12 @@ public abstract class Evento {
     private final int capacidadeMaxima;
     private final double precoBase;
     private final List<Ingresso> ingressosVendidos;
+    private final Map<String, Ingresso> ingressosPorCodigo;
+
+    private int totalIngressosAtivos = 0;
+    private long ingressosUsados = 0;
+    private long ingressosCancelados = 0;
+    private double receitaTotal = 0.0;
 
     protected Evento(String nome, LocalDate data, String local, int capacidadeMaxima, double precoBase) {
         this.id = contadorId++;
@@ -25,6 +34,7 @@ public abstract class Evento {
         this.capacidadeMaxima = capacidadeMaxima;
         this.precoBase = precoBase;
         this.ingressosVendidos = new ArrayList<>();
+        this.ingressosPorCodigo = new HashMap<>();
     }
 
     public abstract String getTipoEvento();
@@ -36,15 +46,28 @@ public abstract class Evento {
             return null;
         }
         Ingresso ingresso = new Ingresso(tipo, precoBase);
+        ingresso.setOnValidateCallback(() -> ingressosUsados++);
+        ingresso.setOnCancelCallback(() -> {
+            totalIngressosAtivos--;
+            ingressosCancelados++;
+            receitaTotal -= ingresso.getPreco();
+            if (totalIngressosAtivos == 0) {
+                receitaTotal = 0.0;
+            }
+        });
+
         ingressosVendidos.add(ingresso);
+        ingressosPorCodigo.put(ingresso.getCodigo().toUpperCase(), ingresso);
+        totalIngressosAtivos++;
+        receitaTotal += ingresso.getPreco();
         return ingresso;
     }
 
     public Ingresso buscarIngresso(String codigo) {
-        return ingressosVendidos.stream()
-                .filter(i -> i.getCodigo().equalsIgnoreCase(codigo))
-                .findFirst()
-                .orElse(null);
+        if (codigo == null) {
+            return null;
+        }
+        return ingressosPorCodigo.get(codigo.toUpperCase());
     }
 
     public boolean cancelarIngresso(String codigo) {
@@ -56,39 +79,34 @@ public abstract class Evento {
     }
 
     public int getIngressosDisponiveis() {
-        return capacidadeMaxima - getTotalIngressosAtivos();
+        return capacidadeMaxima - totalIngressosAtivos;
     }
 
     public int getTotalIngressosAtivos() {
-        return (int) ingressosVendidos.stream()
-                .filter(i -> i.getStatus() != StatusIngresso.CANCELADO)
-                .count();
+        return totalIngressosAtivos;
     }
 
     public double getReceitaTotal() {
-        return ingressosVendidos.stream()
-                .filter(i -> i.getStatus() != StatusIngresso.CANCELADO)
-                .mapToDouble(Ingresso::getPreco)
-                .sum();
+        return Math.round(receitaTotal * 100.0) / 100.0;
     }
 
     public int getTotalVendidos() {
-        return getTotalIngressosAtivos();
+        return totalIngressosAtivos;
     }
 
     public long getIngressosUsados() {
-        return ingressosVendidos.stream().filter(Ingresso::isUsado).count();
+        return ingressosUsados;
     }
 
     public long getIngressosCancelados() {
-        return ingressosVendidos.stream().filter(Ingresso::isCancelado).count();
+        return ingressosCancelados;
     }
 
     public double getTaxaOcupacao() {
         if (capacidadeMaxima <= 0) {
             return 0.0;
         }
-        return (getTotalIngressosAtivos() / (double) capacidadeMaxima) * 100.0;
+        return (totalIngressosAtivos / (double) capacidadeMaxima) * 100.0;
     }
 
     public boolean isEsgotado() {
@@ -120,7 +138,7 @@ public abstract class Evento {
     }
 
     public List<Ingresso> getIngressosVendidos() {
-        return List.copyOf(ingressosVendidos);
+        return Collections.unmodifiableList(ingressosVendidos);
     }
 
     public static void resetContadorId() {

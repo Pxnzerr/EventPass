@@ -37,6 +37,7 @@ public class EventPassTest {
         executar("Equals e HashCode nos Modelos Ingresso e Evento", EventPassTest::testEqualsEHashCodeModelos);
         executar("Dashboard Geral, Receita Consolidada e Taxa de Ocupação", EventPassTest::testDashboardGeralETaxaOcupacao);
         executar("Desempenho em Escala: Busca O(1) e Venda O(1)", EventPassTest::testDesempenhoVendaEBuscaEmEscala);
+        executar("Consulta Direta de Ingresso e Evento por Código", EventPassTest::testConsultaDiretaIngressoEEvento);
 
         long fim = System.currentTimeMillis();
 
@@ -433,5 +434,31 @@ public class EventPassTest {
 
         assertTrue(tVenda < 1500, "Venda em escala de 5000 ingressos deve ser rápida (executou em " + tVenda + "ms)");
         assertTrue(tBusca < 100, "Busca O(1) de ingressos deve ser quase instantânea (executou em " + tBusca + "ms)");
+    }
+
+    private static void testConsultaDiretaIngressoEEvento() {
+        Evento.resetContadorId();
+        GerenciadorEventos g = new GerenciadorEventos();
+        Evento show = new Show("Festival de Inverno", LocalDate.now().plusDays(10), "Teatro Municipal", 200, 80.0, "Orquestra", "Clássico");
+        g.cadastrarEvento(show);
+
+        Ingresso ing = g.venderIngresso(show.getId(), TipoIngresso.VIP);
+        String codigo = ing.getCodigo();
+
+        // Consulta direta pelo código (case-sensitive e case-insensitive)
+        Ingresso achado = g.buscarIngresso(codigo);
+        assertEquals(ing, achado, "buscarIngresso com código exato deve retornar o ingresso");
+        assertEquals(ing, g.buscarIngresso(codigo.toLowerCase()), "buscarIngresso em minúsculas deve ser tolerante a case");
+
+        // Consulta do evento associado pelo código do ingresso
+        Evento eventoAchado = g.buscarEventoPorIngresso(codigo);
+        assertEquals(show, eventoAchado, "buscarEventoPorIngresso deve retornar o evento correto");
+        assertEquals(show, g.buscarEventoPorIngresso(codigo.toLowerCase()), "buscarEventoPorIngresso deve ser case-insensitive");
+
+        // Casos inexistentes e nulos
+        assertFalse(g.buscarIngresso("INEXISTE") != null, "buscarIngresso para código inexistente deve ser null");
+        assertFalse(g.buscarIngresso(null) != null, "buscarIngresso para código null deve ser null");
+        assertFalse(g.buscarEventoPorIngresso("INEXISTE") != null, "buscarEventoPorIngresso para código inexistente deve ser null");
+        assertFalse(g.buscarEventoPorIngresso(null) != null, "buscarEventoPorIngresso para código null deve ser null");
     }
 }

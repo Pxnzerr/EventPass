@@ -105,6 +105,18 @@ public class GerenciadorEventos {
         return ingresso;
     }
 
+    public Evento buscarEventoPorIngresso(String codigo) {
+        return localizarEventoDoIngresso(codigo);
+    }
+
+    public Ingresso buscarIngresso(String codigo) {
+        Evento evento = localizarEventoDoIngresso(codigo);
+        if (evento == null) {
+            return null;
+        }
+        return evento.buscarIngresso(codigo);
+    }
+
     private Evento localizarEventoDoIngresso(String codigo) {
         if (codigo == null) {
             return null;

@@ -256,8 +256,7 @@ public class GerenciadorEventos {
 
         sb.append(String.format("  Tipo:        %s\n", evento.getTipoEvento()));
         sb.append(String.format("  Nome:        %s\n", evento.getNome()));
-        sb.append(String.format("  Data:        %s\n", evento.getData().format(
-                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
+        sb.append(String.format("  Data:        %s\n", evento.getData().format(Evento.FORMATTER_DATA)));
         sb.append(String.format("  Local:       %s\n", evento.getLocal()));
         sb.append(String.format("  Detalhes:    %s\n", evento.getDetalhesEspecificos()));
 

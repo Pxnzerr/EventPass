@@ -141,6 +141,8 @@ public abstract class Evento {
         return Collections.unmodifiableList(ingressosVendidos);
     }
 
+    public static final DateTimeFormatter FORMATTER_DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     public static void resetContadorId() {
         contadorId = 1;
     }
@@ -160,8 +162,7 @@ public abstract class Evento {
 
     @Override
     public String toString() {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return String.format("[#%d] %s | %s | %s | %s | Capacidade: %d | Preço Base: R$ %.2f",
-                id, getTipoEvento(), nome, data.format(fmt), local, capacidadeMaxima, precoBase);
+                id, getTipoEvento(), nome, data.format(FORMATTER_DATA), local, capacidadeMaxima, precoBase);
     }
 }

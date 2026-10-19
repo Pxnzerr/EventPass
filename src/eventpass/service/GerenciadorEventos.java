@@ -372,37 +372,35 @@ public class GerenciadorEventos {
 
     public double getTaxaOcupacaoMediaGeral() {
         int capTotal = 0;
+        int ingressosTotal = 0;
         for (Evento e : eventos) {
             capTotal += e.getCapacidadeMaxima();
+            ingressosTotal += e.getTotalIngressosAtivos();
         }
         if (capTotal == 0) {
             return 0.0;
         }
-        return (getTotalIngressosVendidosGeral() / (double) capTotal) * 100.0;
+        return (ingressosTotal / (double) capTotal) * 100.0;
     }
 
     public String gerarDashboardGeral() {
         StringBuilder sb = new StringBuilder();
         String separador = "═".repeat(60);
 
-        sb.append("\n").append(separador).append("\n");
-        sb.append("         📊 DASHBOARD CONSOLIDADO - EVENTPASS\n");
-        sb.append(separador).append("\n\n");
+        int totalIngressos = 0;
+        int totalCapacidade = 0;
+        double receitaTotal = 0.0;
 
-        sb.append(String.format("  Total de Eventos Cadastrados: %d\n", eventos.size()));
-        sb.append(String.format("  Ingressos Vendidos (Ativos):  %d\n", getTotalIngressosVendidosGeral()));
-        sb.append(String.format(java.util.Locale.US, "  Taxa Média de Ocupação:       %.1f%%\n", getTaxaOcupacaoMediaGeral()));
-        sb.append(String.format(java.util.Locale.US, "  💰 RECEITA BRUTA CONSOLIDADA: R$ %.2f\n", getReceitaTotalGeral()));
-
-        sb.append("\n").append("─".repeat(60)).append("\n");
-        sb.append("  RESUMO POR EVENTO:\n");
-        sb.append("─".repeat(60)).append("\n");
-
+        StringBuilder sbDetalhes = new StringBuilder();
         if (eventos.isEmpty()) {
-            sb.append("  (Nenhum evento cadastrado)\n");
+            sbDetalhes.append("  (Nenhum evento cadastrado)\n");
         } else {
             for (Evento e : eventos) {
-                sb.append(String.format(java.util.Locale.US,
+                totalIngressos += e.getTotalIngressosAtivos();
+                totalCapacidade += e.getCapacidadeMaxima();
+                receitaTotal += e.getReceitaTotal();
+
+                sbDetalhes.append(String.format(java.util.Locale.US,
                         "  [#%d] %-22s | Ocupação: %3.1f%% (%d/%d) | Receita: R$ %.2f%s\n",
                         e.getId(),
                         e.getNome().length() > 22 ? e.getNome().substring(0, 19) + "..." : e.getNome(),
@@ -413,6 +411,23 @@ public class GerenciadorEventos {
                         e.isEsgotado() ? " [ESGOTADO]" : ""));
             }
         }
+
+        double taxaOcupacao = totalCapacidade == 0 ? 0.0 : (totalIngressos / (double) totalCapacidade) * 100.0;
+        double receitaBruta = Math.round(receitaTotal * 100.0) / 100.0;
+
+        sb.append("\n").append(separador).append("\n");
+        sb.append("         📊 DASHBOARD CONSOLIDADO - EVENTPASS\n");
+        sb.append(separador).append("\n\n");
+
+        sb.append(String.format("  Total de Eventos Cadastrados: %d\n", eventos.size()));
+        sb.append(String.format("  Ingressos Vendidos (Ativos):  %d\n", totalIngressos));
+        sb.append(String.format(java.util.Locale.US, "  Taxa Média de Ocupação:       %.1f%%\n", taxaOcupacao));
+        sb.append(String.format(java.util.Locale.US, "  💰 RECEITA BRUTA CONSOLIDADA: R$ %.2f\n", receitaBruta));
+
+        sb.append("\n").append("─".repeat(60)).append("\n");
+        sb.append("  RESUMO POR EVENTO:\n");
+        sb.append("─".repeat(60)).append("\n");
+        sb.append(sbDetalhes);
         sb.append(separador).append("\n");
         return sb.toString();
     }

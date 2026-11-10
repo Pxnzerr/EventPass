@@ -14,6 +14,7 @@ public abstract class Evento {
 
     private final int id;
     private final String nome;
+    private final String nomeLower;
     private final LocalDate data;
     private final String local;
     private final int capacidadeMaxima;
@@ -29,6 +30,7 @@ public abstract class Evento {
     protected Evento(String nome, LocalDate data, String local, int capacidadeMaxima, double precoBase) {
         this.id = contadorId++;
         this.nome = nome;
+        this.nomeLower = nome != null ? nome.toLowerCase() : "";
         this.data = data;
         this.local = local;
         this.capacidadeMaxima = capacidadeMaxima;
@@ -57,7 +59,7 @@ public abstract class Evento {
         });
 
         ingressosVendidos.add(ingresso);
-        ingressosPorCodigo.put(ingresso.getCodigo().toUpperCase(), ingresso);
+        ingressosPorCodigo.put(ingresso.getCodigo(), ingresso);
         totalIngressosAtivos++;
         receitaTotal += ingresso.getPreco();
         return ingresso;
@@ -119,6 +121,10 @@ public abstract class Evento {
 
     public String getNome() {
         return nome;
+    }
+
+    public String getNomeLower() {
+        return nomeLower;
     }
 
     public LocalDate getData() {

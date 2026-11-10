@@ -29,7 +29,7 @@ public class GerenciadorEventos {
         eventos.add(evento);
         eventosPorId.put(evento.getId(), evento);
         for (Ingresso ing : evento.getIngressosVendidos()) {
-            eventoPorIngresso.put(ing.getCodigo().toUpperCase(), evento);
+            eventoPorIngresso.put(ing.getCodigo(), evento);
         }
     }
 
@@ -55,7 +55,7 @@ public class GerenciadorEventos {
         }
         String termoLower = termo.toLowerCase().trim();
         return eventos.stream()
-                .filter(e -> e.getNome().toLowerCase().contains(termoLower))
+                .filter(e -> e.getNomeLower().contains(termoLower))
                 .toList();
     }
 
@@ -88,7 +88,7 @@ public class GerenciadorEventos {
         }
         Ingresso ingresso = evento.venderIngresso(tipo);
         if (ingresso != null) {
-            eventoPorIngresso.put(ingresso.getCodigo().toUpperCase(), evento);
+            eventoPorIngresso.put(ingresso.getCodigo(), evento);
         }
         return ingresso;
     }
@@ -100,7 +100,7 @@ public class GerenciadorEventos {
         }
         Ingresso ingresso = evento.venderIngresso(tipo);
         if (ingresso != null) {
-            eventoPorIngresso.put(ingresso.getCodigo().toUpperCase(), evento);
+            eventoPorIngresso.put(ingresso.getCodigo(), evento);
         }
         return ingresso;
     }

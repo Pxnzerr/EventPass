@@ -1,8 +1,11 @@
 package eventpass.model;
 
-import java.util.UUID;
+import java.util.HexFormat;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Ingresso {
+
+    private static final HexFormat HEX_UPPER = HexFormat.of().withUpperCase();
 
     private final String codigo;
     private final TipoIngresso tipo;
@@ -12,7 +15,7 @@ public class Ingresso {
     private Runnable onCancelCallback;
 
     public Ingresso(TipoIngresso tipo, double precoBase) {
-        this.codigo = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        this.codigo = HEX_UPPER.toHexDigits(ThreadLocalRandom.current().nextInt());
         this.tipo = tipo;
         this.preco = precoBase * tipo.getMultiplicadorPreco();
         this.status = StatusIngresso.VALIDO;
